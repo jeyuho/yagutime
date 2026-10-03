@@ -6,10 +6,12 @@ import { validateSignup, checkPassword } from "../lib/utils";
 import { Segmented, fieldStyle } from "./common";
 
 const SIGNUP_FIELDS = [
-  { k: "username", label: "아이디", placeholder: "영문 소문자, 숫자 4~16자", ac: "username" },
+  { k: "username", label: "아이디", placeholder: "예: jeyuho", ac: "username",
+    hint: "영문 소문자, 숫자, 밑줄(_)로 4~16자. 로그인할 때 쓰고 다른 사람에게는 보이지 않아요." },
   { k: "password", label: "비밀번호", placeholder: "아래 조건을 모두 채워 주세요", type: "password", ac: "new-password" },
   { k: "confirm", label: "비밀번호 확인", placeholder: "한 번 더 입력", type: "password", ac: "new-password" },
-  { k: "nickname", label: "닉네임", placeholder: "활동할 이름 2~10자", ac: "nickname" },
+  { k: "nickname", label: "닉네임", placeholder: "예: 창원직관러", ac: "nickname",
+    hint: "게시판에 보이는 이름이에요. 한글, 영문, 숫자로 2~10자." },
 ];
 
 export default function AuthScreen({ t }) {
@@ -107,12 +109,16 @@ export default function AuthScreen({ t }) {
                 id={`signup-${f.k}`}
                 value={form[f.k]} onChange={set(f.k)} type={f.type ?? "text"} placeholder={f.placeholder}
                 autoComplete={f.ac} autoCapitalize="none" style={fieldStyle(t, !!errors[f.k])} aria-invalid={!!errors[f.k]}
-                aria-describedby={f.k === "password" ? "signup-password-rules" : undefined}
+                aria-describedby={f.k === "password" ? "signup-password-rules" : f.hint ? `signup-${f.k}-hint` : undefined}
               />
               {f.k === "password" && (
                 <PasswordRules id="signup-password-rules" t={t} password={form.password} showMissing={!!errors.password} />
               )}
-              {errors[f.k] && <span className="text-xs" style={{ color: DANGER }}>{errors[f.k]}</span>}
+              {errors[f.k] ? (
+                <span className="text-xs" style={{ color: DANGER }}>{errors[f.k]}</span>
+              ) : (
+                f.hint && <span id={`signup-${f.k}-hint`} className="text-xs" style={{ color: FAINT, lineHeight: 1.5 }}>{f.hint}</span>
+              )}
             </div>
           ))}
 
