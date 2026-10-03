@@ -17,6 +17,7 @@ npm run build    # 프로덕션 빌드 (dist/)
 ```
 supabase/schema.sql      테이블, RLS 정책, RPC 함수, 가입 트리거 (새 프로젝트용, 항상 최종 상태)
 supabase/migrations/     이미 운영 중인 DB에 적용할 변경 SQL (날짜순). 서버를 바꿀 땐 schema.sql 과 마이그레이션을 같이 고칠 것
+docs/운영_경기관리.md    운영자용: 경기 일정 CSV 올리기, 선발·결과 입력, 일정 변경 처리 (games_template.csv 양식)
 src/App.jsx              라우터 루트. 로그인/프로필/응원팀 상태에 따라 AuthScreen · TeamModal · Shell 분기
 src/hooks/useAuth.js     세션 + profiles 행 로드
 src/lib/api.js           모든 서버 호출(api 객체)과 에러 코드 → 한국어 문구(errorText)
