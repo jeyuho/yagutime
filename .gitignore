@@ -1,0 +1,8 @@
+node_modules
+dist
+.env.local
+.env.*.local
+.DS_Store
+
+# 별도 Expo 프로젝트 (이 저장소에 포함하지 않음)
+my-app/

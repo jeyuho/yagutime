@@ -1,0 +1,13 @@
+@import "tailwindcss";
+
+html, body, #root { min-height: 100%; }
+body {
+  margin: 0;
+  font-family: "Pretendard Variable", Pretendard, "Apple SD Gothic Neo", "Noto Sans KR", "Malgun Gothic", sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+@keyframes ytPulse { 0%, 100% { opacity: 1 } 50% { opacity: .25 } }
+@keyframes ytSpin { to { transform: rotate(360deg) } }
+@media (prefers-reduced-motion: reduce) {
+  * { animation: none !important; transition: none !important; }
+}
