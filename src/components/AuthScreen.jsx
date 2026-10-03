@@ -7,7 +7,7 @@ import { LEGAL_DOCS } from "../constants/legal";
 import { Segmented, fieldStyle } from "./common";
 
 const SIGNUP_FIELDS = [
-  { k: "username", label: "아이디", placeholder: "예: jeyuho", ac: "username",
+  { k: "username", label: "아이디", placeholder: "아이디", ac: "username",
     hint: "영문 소문자, 숫자, 밑줄(_)로 4~16자. 로그인할 때 쓰고 다른 사람에게는 보이지 않아요." },
   { k: "password", label: "비밀번호", placeholder: "아래 조건을 모두 채워 주세요", type: "password", ac: "new-password" },
   { k: "confirm", label: "비밀번호 확인", placeholder: "한 번 더 입력", type: "password", ac: "new-password" },
