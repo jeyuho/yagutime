@@ -15,6 +15,7 @@ const ERROR_TEXT = {
   invalid_meta: "입력값을 다시 확인해 주세요.",
   too_fast: "너무 빨라요. 잠시 후 다시 시도해 주세요.",
   terms_required: "필수 약관에 모두 동의해 주세요.",
+  banned_word: "사용할 수 없는 표현이 들어 있어요. 고쳐서 다시 올려 주세요.",
   not_found: "글을 찾을 수 없어요.",
   nickname_reserved: "사용할 수 없는 닉네임이에요.",
   weak_password: "비밀번호 조건을 모두 채워 주세요.",

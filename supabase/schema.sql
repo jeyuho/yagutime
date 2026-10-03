@@ -11,6 +11,7 @@
 --   * 응원팀 변경은 행 잠금(FOR UPDATE)으로 처리해 무료 변경 중복 사용을 막습니다.
 --   * profiles, attendance 는 RLS 정책으로 본인 데이터만 다룰 수 있습니다.
 --   * games(경기 일정)는 누구나 읽기만 가능하고, 운영자가 대시보드에서 입력합니다 (docs/운영_경기관리.md).
+--   * 글·댓글·닉네임의 금칙어(banned_words)는 서버가 검사하고, 목록은 클라이언트에 내려보내지 않습니다.
 --   * 신고가 policy_report_hide() 명 이상 쌓인 글·댓글과 내가 차단한 사람의 글·댓글은 서버가 빼고 보냅니다.
 --     익명 글에서 차단하면 그 사람의 익명 글만 가려, 사라진 닉네임 글로 익명 작성자를 추측할 수 없게 합니다.
 -- =====================================================================
@@ -94,9 +95,127 @@ alter table public.profiles enable row level security;
 create policy "read own profile" on public.profiles
   for select to authenticated using (id = auth.uid());
 
-create or replace function public.is_reserved_nickname(n text) returns boolean
+-- 금칙어 (글·댓글·닉네임). 운영자가 대시보드에서 추가·삭제
+create table public.banned_words (
+  word       text primary key check (char_length(word) between 1 and 30),
+  created_at timestamptz not null default now()
+);
+create table public.allowed_words (
+  word       text primary key check (char_length(word) between 1 and 30),
+  created_at timestamptz not null default now()
+);
+alter table public.banned_words  enable row level security;
+alter table public.allowed_words enable row level security;
+revoke all on public.banned_words, public.allowed_words from anon, authenticated;
+
+-- 시작용 목록. 운영하면서 계속 보강하세요 (insert into public.banned_words (word) values ('...');)
+insert into public.banned_words (word) values
+  ('씨발'),
+  ('시발'),
+  ('씨빨'),
+  ('씨바'),
+  ('씨팔'),
+  ('시팔'),
+  ('씨부랄'),
+  ('ㅅㅂ'),
+  ('ㅆㅂ'),
+  ('ㅆㅃ'),
+  ('ㅅㅃ'),
+  ('썅'),
+  ('쌍년'),
+  ('쌍놈'),
+  ('병신'),
+  ('븅신'),
+  ('빙신'),
+  ('ㅄ'),
+  ('ㅂㅅ'),
+  ('좆'),
+  ('좃'),
+  ('졷'),
+  ('씹새'),
+  ('씹창'),
+  ('씹년'),
+  ('씹놈'),
+  ('개새끼'),
+  ('개새기'),
+  ('개세끼'),
+  ('개색기'),
+  ('개색히'),
+  ('개쌔끼'),
+  ('개씨발'),
+  ('지랄'),
+  ('ㅈㄹ'),
+  ('염병'),
+  ('엠창'),
+  ('느금'),
+  ('니애미'),
+  ('니앰'),
+  ('니미럴'),
+  ('애미뒤'),
+  ('애비뒤'),
+  ('애미없'),
+  ('애비없'),
+  ('섹스'),
+  ('창녀'),
+  ('창년'),
+  ('걸레년'),
+  ('딸딸이'),
+  ('홍어'),
+  ('전라디언'),
+  ('쪽바리'),
+  ('짱깨'),
+  ('한남충'),
+  ('김치녀'),
+  ('메갈'),
+  ('틀딱'),
+  ('애자'),
+  ('fuck'),
+  ('fck'),
+  ('fuk'),
+  ('shit'),
+  ('bitch'),
+  ('asshole'),
+  ('motherfucker'),
+  ('nigger');
+insert into public.allowed_words (word) values
+  ('시발점'),
+  ('시발역'),
+  ('홍어회'),
+  ('홍어삼합'),
+  ('홍어애'),
+  ('홍어탕'),
+  ('애자일'),
+  ('유니섹스'),
+  ('메갈로돈');
+
+-- 비교용 정리: 소문자로, 한글·자모·영문과 띄어쓰기만 남김 (줄바꿈·탭은 띄어쓰기로)
+create or replace function public._normalize_text(t text) returns text
 language sql immutable as $$
+  select regexp_replace(regexp_replace(lower(coalesce(t, '')), '\s+', ' ', 'g'), '[^가-힣ㄱ-ㅎㅏ-ㅣa-z ]', '', 'g')
+$$;
+
+create or replace function public.has_banned_word(t text) returns boolean
+language plpgsql stable security definer set search_path = public as $$
+declare
+  v text := public._normalize_text(t);
+  a record;
+begin
+  if trim(v) = '' then return false; end if;
+  -- 허용 단어는 긴 것부터 구분자로 바꿔서, 지운 자리 앞뒤 글자가 붙어 새 금칙어가 되지 않게 함
+  for a in select public._normalize_text(word) as w from public.allowed_words order by char_length(word) desc loop
+    if a.w <> '' then v := replace(v, a.w, '|'); end if;
+  end loop;
+  return exists (
+    select 1 from public.banned_words b
+     where trim(public._normalize_text(b.word)) <> ''
+       and position(public._normalize_text(b.word) in v) > 0);
+end $$;
+
+-- 닉네임: 예약어 + 금칙어 (회원가입 트리거와 가입 전 중복 확인이 이 함수를 씀)
+create or replace function public.is_reserved_nickname(n text) returns boolean
+language sql stable security definer set search_path = public as $$
   select coalesce(n, '') ilike any (array['%익명%', '%운영자%', '%관리자%', '%야구타임%'])
+      or public.has_banned_word(n)
 $$;
 
 -- 회원가입 시 프로필 자동 생성
@@ -396,6 +515,7 @@ declare
 begin
   if me.team_id is null then raise exception 'team_required'; end if;
   if p_board not in ('team', 'all', 'party', 'stadium') then raise exception 'invalid_board'; end if;
+  if public.has_banned_word(coalesce(p_title, '') || ' ' || coalesce(p_body, '')) then raise exception 'banned_word'; end if;
 
   -- 도배 방지: 10초에 글 1개
   if exists (select 1 from public.posts
@@ -489,6 +609,7 @@ declare
   v_anon boolean := coalesce(p_is_anon, true);
   v_id   uuid;
 begin
+  if public.has_banned_word(p_body) then raise exception 'banned_word'; end if;
   if exists (select 1 from public.comments
               where author_id = auth.uid() and created_at > now() - interval '3 seconds') then
     raise exception 'too_fast';
@@ -825,6 +946,7 @@ revoke execute on function public._visible_posts()            from public, anon,
 revoke execute on function public._accessible_post(uuid)      from public, anon, authenticated;
 revoke execute on function public.handle_new_user()           from public, anon, authenticated;
 revoke execute on function public._is_blocked(uuid, boolean)  from public, anon, authenticated;
+revoke execute on function public.has_banned_word(text)        from public, anon, authenticated;
 
 -- 로그인 사용자 전용 RPC
 revoke execute on function public.change_team(text)                              from public, anon;

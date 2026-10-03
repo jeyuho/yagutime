@@ -77,6 +77,30 @@ delete from public.posts where id = '글 id';
 update public.reports set status = 'resolved' where post_id = '글 id';
 ```
 
+## 5-2. 금칙어 (운영자)
+
+글 제목·본문, 댓글, 닉네임에 금칙어가 있으면 서버가 거부합니다. 숫자·기호를 끼운 변형("시1발", "f.u.c.k")도 걸러요. 띄어쓰기는 단어 경계로 봐서 "역시 발이 빠르다" 같은 정상 문장은 통과합니다.
+
+```sql
+-- 금칙어 추가 / 삭제
+insert into public.banned_words (word) values ('새 금칙어');
+delete from public.banned_words where word = '지울 단어';
+
+-- 금칙어가 들어 있지만 정상적인 말 (잘못 걸리는 경우) 허용
+insert into public.allowed_words (word) values ('시발점');
+
+-- 검사해 보기
+select public.has_banned_word('검사할 문장');
+
+-- 금칙어 추가 전에 이미 올라온 글 찾기 (새 단어는 기존 글에 자동 적용되지 않음)
+select id, board, title, created_at from public.posts
+ where public.has_banned_word(title || ' ' || body) order by created_at desc;
+select id, post_id, body, created_at from public.comments
+ where public.has_banned_word(body) order by created_at desc;
+```
+
+목록은 앱·웹에 내려보내지 않습니다. 사용자가 우회하는 표현을 쓰면 신고로 들어오니, 신고 처리할 때 새 표현을 금칙어에 추가해 주세요.
+
 ## 6. 테스트 팁
 
 유예 기간이나 잠금을 바로 확인하고 싶으면 SQL Editor에서 시간을 당기면 됩니다.
