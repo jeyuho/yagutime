@@ -24,7 +24,5 @@ export function MetaLine({ meta, board, t }) {
         <Users size={12} />{meta.date} {meta.stadium} / {meta.people}명 모집
       </p>
     );
-  if (board === "trade")
-    return <p className="text-xs font-semibold mb-1" style={{ color: t.accent }}>[{meta.kind}] {Number(meta.price).toLocaleString("ko-KR")}원</p>;
   return null;
 }

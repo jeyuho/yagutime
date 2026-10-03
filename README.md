@@ -9,6 +9,7 @@ KBO 팬 커뮤니티 웹 앱. React(Vite) + Supabase.
    Authentication 메뉴의 Email 공급자 설정에서 **Confirm email** 을 끄세요.
 3. **비밀번호 규칙 맞추기.** Authentication 설정의 비밀번호 항목에서 최소 길이를 8로, 요구 조건을 "소문자, 대문자, 숫자"(Lowercase, uppercase letters and digits)로 설정하세요. 앱에서도 같은 규칙(`src/lib/utils.js` 의 `PASSWORD_RULES`)을 검사하지만 서버 설정이 최종 기준이에요.
 4. **스키마 실행.** SQL Editor를 열고 `supabase/schema.sql` 전체를 붙여 넣어 실행합니다.
+   이미 예전 `schema.sql`을 실행한 프로젝트라면 `schema.sql` 대신 `supabase/migrations/`의 파일을 날짜 순서대로 한 번씩 실행하세요.
 5. **키 복사.** Project Settings > API 에서 Project URL과 anon(publishable) 키를 복사합니다.
 
 > 대시보드 메뉴 이름은 Supabase 업데이트에 따라 조금씩 바뀔 수 있어요.
@@ -44,11 +45,35 @@ src/components/            화면 컴포넌트 (home/, board/ 하위 포함)
 - RPC 응답에는 작성자 id가 없습니다. 익명 글과 댓글은 서버에서 이미 "익명", "익명1", "익명(글쓴이)" 로 바뀐 이름만 내려옵니다.
 - 팀 자유게시판은 서버가 호출자의 응원팀 기준으로만 보여 주고 쓰게 합니다. 다른 팀 게시판 글 id를 알아도 열 수 없습니다.
 - 응원팀 변경(`change_team`)은 행 잠금(`FOR UPDATE`)으로 처리해, 요청을 동시에 여러 번 보내도 무료 변경은 한 번만 쓰입니다.
-- 공감은 1인 1회(기본키), 내 글 공감 금지, 글 10초 / 댓글 3초 간격 제한을 서버에서 검사합니다.
+- 공감은 1인 1회(기본키, 내 글에도 가능), 글 10초 / 댓글 3초 간격 제한을 서버에서 검사합니다.
+- 서로 다른 5명이 신고한 글·댓글은 자동으로 숨겨지고(`hidden_at`), 내가 차단한 사람의 글·댓글은 서버가 빼고 보냅니다. 익명 글에서 차단하면 그 사람의 익명 글만 가려서 익명 작성자가 드러나지 않게 합니다.
+- 회원 탈퇴(`delete_account`)는 계정과 그 사람의 모든 데이터를 지웁니다. 가입할 때 약관 동의가 없으면 서버가 가입을 거부합니다.
 - `profiles`, `attendance` 는 RLS 정책으로 본인 데이터만 다룹니다. 직관 기록은 내 현재 응원팀으로만 추가할 수 있습니다.
 - anon 키는 공개되는 키라 괜찮지만, **service_role 키는 절대 프론트엔드에 넣지 마세요.**
 
-## 5. 테스트 팁
+## 5. 신고 처리 (운영자)
+
+운영자 화면은 아직 없어서 SQL Editor에서 처리합니다. 스토어 심사 기준상 신고는 24시간 안에 확인하는 게 좋아요.
+
+```sql
+-- 확인 안 한 신고 (최근 순)
+select r.created_at, r.reason, r.detail, r.post_id, r.comment_id,
+       coalesce(p.title, c.body) as 내용, coalesce(p.hidden_at, c.hidden_at) as 숨김
+  from public.reports r
+  left join public.posts p on p.id = r.post_id
+  left join public.comments c on c.id = r.comment_id
+ where r.status = 'open'
+ order by r.created_at desc;
+
+-- 문제없는 글이면 다시 보이게 / 문제 있는 글이면 삭제
+update public.posts set hidden_at = null where id = '글 id';
+delete from public.posts where id = '글 id';
+
+-- 처리 끝난 신고 닫기
+update public.reports set status = 'resolved' where post_id = '글 id';
+```
+
+## 6. 테스트 팁
 
 유예 기간이나 잠금을 바로 확인하고 싶으면 SQL Editor에서 시간을 당기면 됩니다.
 
@@ -62,9 +87,11 @@ update public.profiles set team_locked_until = now() - interval '1 minute' where
 
 동시 요청 방어를 확인하려면, 유예 중인 계정으로 브라우저 콘솔에서 서로 다른 팀으로 `change_team` 을 동시에 두 번 호출해 보세요. 하나만 성공하고 나머지는 `team_locked` 로 거부돼야 합니다.
 
-## 6. 알려진 한계 (다음 단계)
+## 7. 알려진 한계 (다음 단계)
 
 - 경기 일정은 아직 샘플이고, 진행 중 경기의 직관 결과를 사용자가 직접 고릅니다 → 2단계에서 실제 일정 연동 + 종료 후 자동 확정
 - 대시보드에서 메타데이터 없이 직접 만든 사용자는 프로필 생성 트리거에서 거부됩니다 (앱의 회원가입으로만 가입)
 - 아이디 기반 가입이라 비밀번호 찾기가 없습니다 → 3단계에서 복구 수단 검토
+- 구장 게시판, 신고·차단·탈퇴 화면은 앱(`../yagutime-app`)에만 있습니다. 웹은 서버 변경에 맞춰 깨지지 않게만 고쳤어요
+- 이용약관·개인정보처리방침(`src/constants/legal.js`)은 법률 검토 전 초안입니다
 - 글 목록은 최근 50개까지만 보입니다 → 3단계에서 페이지네이션

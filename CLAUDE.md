@@ -15,7 +15,8 @@ npm run build    # 프로덕션 빌드 (dist/)
 ## 구조
 
 ```
-supabase/schema.sql      테이블, RLS 정책, RPC 함수, 가입 트리거 (SQL Editor에서 통째로 실행)
+supabase/schema.sql      테이블, RLS 정책, RPC 함수, 가입 트리거 (새 프로젝트용, 항상 최종 상태)
+supabase/migrations/     이미 운영 중인 DB에 적용할 변경 SQL (날짜순). 서버를 바꿀 땐 schema.sql 과 마이그레이션을 같이 고칠 것
 src/App.jsx              라우터 루트. 로그인/프로필/응원팀 상태에 따라 AuthScreen · TeamModal · Shell 분기
 src/hooks/useAuth.js     세션 + profiles 행 로드
 src/lib/api.js           모든 서버 호출(api 객체)과 에러 코드 → 한국어 문구(errorText)
@@ -47,6 +48,8 @@ src/components/          화면. common.jsx 에 공용 UI(Segmented, fieldStyle,
 | `utils.js` `PASSWORD_RULES` | Supabase 대시보드 Auth 비밀번호 설정 (README 1-3) |
 | `constants/policy.js` | `schema.sql` `policy_team_lock`, `policy_team_grace` |
 | `api.js` `ERROR_TEXT` 키 | RPC가 `raise exception` 하는 코드 문자열 |
+| `constants/legal.js` (앱에서 복사) | 앱 `../yagutime-app/src/constants/legal.js` 와 같은 내용 |
+| `constants/theme.js` `BOARDS` 키 | `posts_board_check` (team, all, party, stadium) |
 
 ## 인증
 

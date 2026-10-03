@@ -3,6 +3,7 @@ import { User, EyeOff, Check, Circle } from "lucide-react";
 import { MUTED, FAINT, DANGER } from "../constants/theme";
 import { api, errorText } from "../lib/api";
 import { validateSignup, checkPassword } from "../lib/utils";
+import { LEGAL_DOCS } from "../constants/legal";
 import { Segmented, fieldStyle } from "./common";
 
 const SIGNUP_FIELDS = [
@@ -25,6 +26,9 @@ export default function AuthScreen({ t }) {
   const [form, setForm] = useState({ username: "", password: "", confirm: "", nickname: "", defaultAnon: true });
   const [errors, setErrors] = useState({});
   const [formError, setFormError] = useState("");
+  // 필수 동의: 이용약관, 개인정보 수집·이용, 만 14세 이상 (앱 signup.jsx 와 같은 항목)
+  const [agreed, setAgreed] = useState({ terms: false, privacy: false, age: false });
+  const allAgreed = agreed.terms && agreed.privacy && agreed.age;
   const set = (k) => (e) => setForm((f) => ({ ...f, [k]: e.target.value }));
 
   async function submitLogin() {
@@ -48,6 +52,7 @@ export default function AuthScreen({ t }) {
     setErrors(errs);
     setFormError("");
     if (Object.keys(errs).length) return;
+    if (!allAgreed) return setFormError("필수 약관에 모두 동의해 주세요.");
 
     setBusy(true);
     try {
@@ -60,7 +65,7 @@ export default function AuthScreen({ t }) {
         setErrors(dup);
         return;
       }
-      await api.signUp(values);
+      await api.signUp({ ...values, termsAgreed: allAgreed });
     } catch (e) {
       setFormError(
         e?.message === "email_confirm_on"
@@ -134,6 +139,31 @@ export default function AuthScreen({ t }) {
               ]}
             />
             <span className="text-xs" style={{ color: FAINT }}>글이나 댓글을 쓸 때마다 바꿀 수 있어요.</span>
+          </div>
+
+          <div className="flex flex-col gap-2 rounded-xl p-3" style={{ border: `1px solid ${t.line}` }}>
+            <label className="flex items-center gap-2 text-sm font-bold">
+              <input type="checkbox" checked={allAgreed} style={{ accentColor: t.accent }}
+                onChange={() => setAgreed({ terms: !allAgreed, privacy: !allAgreed, age: !allAgreed })} />
+              필수 항목 모두 동의
+            </label>
+            {[["terms", "(필수) 이용약관 동의", "terms"], ["privacy", "(필수) 개인정보 수집·이용 동의", "privacy"], ["age", "(필수) 만 14세 이상이에요", null]].map(([k, label, doc]) => (
+              <div key={k} className="text-sm">
+                <label className="flex items-center gap-2">
+                  <input type="checkbox" checked={agreed[k]} style={{ accentColor: t.accent }}
+                    onChange={() => setAgreed((a) => ({ ...a, [k]: !a[k] }))} />
+                  {label}
+                </label>
+                {doc && (
+                  <details className="ml-6 mt-1">
+                    <summary className="text-xs cursor-pointer" style={{ color: MUTED }}>전문 보기</summary>
+                    <div className="mt-2 max-h-48 overflow-y-auto text-xs whitespace-pre-wrap" style={{ color: MUTED, lineHeight: 1.6 }}>
+                      {LEGAL_DOCS[doc].sections.map(([h, body]) => `${h}\n${body}`).join("\n\n")}
+                    </div>
+                  </details>
+                )}
+              </div>
+            ))}
           </div>
 
           {formError && <p className="text-sm" style={{ color: DANGER }} role="alert">{formError}</p>}

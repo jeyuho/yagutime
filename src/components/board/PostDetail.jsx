@@ -97,21 +97,15 @@ export default function PostDetail({ profile, team, t }) {
             ))}
           </dl>
         )}
-        {post.meta && boardKey === "trade" && (
-          <p className="mt-3 text-base font-bold" style={{ color: t.accent }}>
-            [{post.meta.kind}] {Number(post.meta.price).toLocaleString("ko-KR")}원
-          </p>
-        )}
 
         <p className="text-sm mt-3 whitespace-pre-wrap" style={{ lineHeight: 1.7 }}>{post.body}</p>
 
         <button
           onClick={() => act(async () => { await api.toggleLike(post.id); setPost(await api.getPost(post.id)); })}
-          disabled={post.is_mine || busy}
+          disabled={busy}
           aria-pressed={post.liked_by_me}
           className="flex items-center gap-1.5 mt-4 rounded-lg px-3 py-1.5 text-sm font-semibold"
-          style={{ border: `1px solid ${post.liked_by_me ? t.accent : t.line}`, color: post.liked_by_me ? t.accent : post.is_mine ? FAINT : MUTED }}
-          title={post.is_mine ? "내 글에는 공감할 수 없어요" : undefined}
+          style={{ border: `1px solid ${post.liked_by_me ? t.accent : t.line}`, color: post.liked_by_me ? t.accent : MUTED }}
         >
           <Heart size={14} fill={post.liked_by_me ? t.accent : "none"} />공감 {Number(post.like_count)}
         </button>

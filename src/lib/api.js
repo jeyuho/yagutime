@@ -14,7 +14,7 @@ const ERROR_TEXT = {
   invalid_board: "알 수 없는 게시판이에요.",
   invalid_meta: "입력값을 다시 확인해 주세요.",
   too_fast: "너무 빨라요. 잠시 후 다시 시도해 주세요.",
-  own_post: "내 글에는 공감할 수 없어요.",
+  terms_required: "필수 약관에 모두 동의해 주세요.",
   not_found: "글을 찾을 수 없어요.",
   nickname_reserved: "사용할 수 없는 닉네임이에요.",
   weak_password: "비밀번호 조건을 모두 채워 주세요.",
@@ -48,11 +48,12 @@ export const api = {
     const rows = await rpc("check_signup_available", { p_username: username, p_nickname: nickname });
     return rows?.[0] ?? { username_taken: false, nickname_taken: false, nickname_reserved: false };
   },
-  async signUp({ username, password, nickname, defaultAnon }) {
+  // termsAgreed: 이용약관, 개인정보처리방침, 만 14세 이상 모두 동의. 서버(handle_new_user)가 없으면 가입을 거부함
+  async signUp({ username, password, nickname, defaultAnon, termsAgreed }) {
     const { data, error } = await supabase.auth.signUp({
       email: toEmail(username),
       password,
-      options: { data: { username: username.toLowerCase(), nickname, default_anon: defaultAnon } },
+      options: { data: { username: username.toLowerCase(), nickname, default_anon: defaultAnon, terms_agreed: termsAgreed === true } },
     });
     if (error) throw error;
     // 이메일 확인이 켜져 있으면 세션이 없음 → 설정 안내
@@ -75,7 +76,6 @@ export const api = {
     const rows = await rpc("get_post", { p_id: id });
     return rows?.[0] ?? null;
   },
-  listHotPosts: () => rpc("list_hot_posts", { p_limit: 3 }),
   createPost: (board, { title, body, anon, meta }) =>
     rpc("create_post", { p_board: board, p_title: title, p_body: body, p_is_anon: anon, p_meta: meta }),
   deletePost: (id) => rpc("delete_post", { p_id: id }),

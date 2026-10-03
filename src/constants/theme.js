@@ -39,6 +39,5 @@ export const BOARDS = [
   { key: "team", label: (team) => `${team.short} 자유게시판`, desc: (team) => `${team.name} 팬끼리 나누는 이야기` },
   { key: "all", label: () => "전체 게시판", desc: () => "모든 구단 팬이 함께 쓰는 게시판" },
   { key: "party", label: () => "직관 게시판", desc: () => "직관, 원정 같이 갈 사람 모집" },
-  { key: "trade", label: () => "거래 게시판", desc: () => "굿즈와 티켓 거래. 정가보다 비싼 티켓 거래 글은 삭제돼요." },
 ];
 export const boardByKey = (key) => BOARDS.find((b) => b.key === key);

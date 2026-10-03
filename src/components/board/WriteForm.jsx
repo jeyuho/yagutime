@@ -16,8 +16,6 @@ export default function WriteForm({ profile, team, t }) {
   const [date, setDate] = useState("");
   const [stadium, setStadium] = useState(team.home);
   const [people, setPeople] = useState(2);
-  const [kind, setKind] = useState("팝니다");
-  const [price, setPrice] = useState("");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
 
@@ -29,11 +27,9 @@ export default function WriteForm({ profile, team, t }) {
     if (!body.trim()) return setError("내용을 입력해 주세요.");
     if (boardKey === "party" && !date.trim()) return setError("경기 날짜와 시간을 입력해 주세요.");
     if (boardKey === "party" && !(Number(people) >= 1 && Number(people) <= 20)) return setError("모집 인원은 1~20명이에요.");
-    if (boardKey === "trade" && !(Number(price) > 0)) return setError("가격을 숫자로 입력해 주세요.");
 
     let meta = null;
     if (boardKey === "party") meta = { date: date.trim(), stadium, people: Number(people) };
-    if (boardKey === "trade") meta = { kind, price: Number(price) };
 
     setBusy(true);
     setError("");
@@ -61,9 +57,6 @@ export default function WriteForm({ profile, team, t }) {
         <Segmented t={t} value={anon} onChange={setAnon}
           options={[{ value: false, label: profile.nickname, icon: <User size={14} /> }, { value: true, label: "익명", icon: <EyeOff size={14} /> }]} />
 
-        {boardKey === "trade" && (
-          <Segmented t={t} value={kind} onChange={setKind} options={[{ value: "팝니다", label: "팝니다" }, { value: "삽니다", label: "삽니다" }]} />
-        )}
 
         <input value={title} onChange={(e) => setTitle(e.target.value)} maxLength={100} placeholder="제목" style={field} aria-label="제목" />
 
@@ -84,21 +77,12 @@ export default function WriteForm({ profile, team, t }) {
           </>
         )}
 
-        {boardKey === "trade" && (
-          <label className="flex items-center gap-1.5" style={field}>
-            <input type="number" min={0} value={price} onChange={(e) => setPrice(e.target.value)} placeholder="가격"
-              className="w-full bg-transparent" style={{ color: TEXT, outline: "none" }} aria-label="가격" />
-            <span className="text-sm shrink-0" style={{ color: MUTED }}>원</span>
-          </label>
-        )}
-
         <textarea
           value={body}
           onChange={(e) => setBody(e.target.value)}
           rows={8}
           maxLength={5000}
-          placeholder={boardKey === "trade" ? "상품 상태, 거래 방법을 적어 주세요."
-            : boardKey === "party" ? "좌석, 만나는 장소, 응원 스타일을 적어 주세요."
+          placeholder={boardKey === "party" ? "좌석, 만나는 장소, 응원 스타일을 적어 주세요."
             : "야구 이야기를 자유롭게 나눠 보세요."}
           style={{ ...field, resize: "vertical", lineHeight: 1.6 }}
           aria-label="내용"
