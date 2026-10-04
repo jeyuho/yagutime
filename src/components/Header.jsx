@@ -9,7 +9,7 @@ export default function Header({ team, t, locked, onTeamClick }) {
       style={{ background: t.bg, borderBottom: `1px solid ${t.line}` }}
     >
       <Link to="/" className="text-lg font-extrabold" style={{ letterSpacing: "-0.02em" }}>
-        야구타임
+        덕아웃
       </Link>
       <button
         onClick={onTeamClick}

@@ -81,7 +81,7 @@ export default function AuthScreen({ t }) {
 
   return (
     <div className="px-5 pt-16 pb-10">
-      <h1 className="text-4xl font-black" style={{ letterSpacing: "-0.04em" }}>야구타임</h1>
+      <h1 className="text-4xl font-black" style={{ letterSpacing: "-0.04em" }}>덕아웃</h1>
       <p className="text-sm mt-2" style={{ color: MUTED }}>KBO 팬들이 모이는 우리 팀 커뮤니티</p>
 
       <div className="mt-8">

@@ -61,7 +61,7 @@ export function teamStatus(profile) {
 // 클라이언트 입력 검증 (서버도 같은 규칙을 다시 검사함)
 export const ID_RE = /^[a-z0-9_]{4,16}$/;
 export const NICK_RE = /^[가-힣a-zA-Z0-9_]{2,10}$/;
-const RESERVED = ["익명", "운영자", "관리자", "야구타임"];
+const RESERVED = ["익명", "운영자", "관리자", "야구타임", "덕아웃"];
 
 // 비밀번호 규칙은 여기서만 관리합니다. 회원가입 화면의 실시간 안내와 제출 검증이 모두 이 목록을 씁니다.
 // 서버 기준은 Supabase Auth 비밀번호 설정이라, 규칙을 바꾸면 README의 대시보드 설정도 같이 맞춰 주세요.

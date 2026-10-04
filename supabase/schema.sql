@@ -214,7 +214,7 @@ end $$;
 -- 닉네임: 예약어 + 금칙어 (회원가입 트리거와 가입 전 중복 확인이 이 함수를 씀)
 create or replace function public.is_reserved_nickname(n text) returns boolean
 language sql stable security definer set search_path = public as $$
-  select coalesce(n, '') ilike any (array['%익명%', '%운영자%', '%관리자%', '%야구타임%'])
+  select coalesce(n, '') ilike any (array['%익명%', '%운영자%', '%관리자%', '%야구타임%', '%덕아웃%'])
       or public.has_banned_word(n)
 $$;
 
